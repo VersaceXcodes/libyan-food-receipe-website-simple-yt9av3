@@ -1,0 +1,633 @@
+openapi: 3.0.0
+info:
+  title: Libyan Food Recipe Website API
+  version: 1.0.0
+  description: >
+    This API powers the Libyan Food Recipe Website MVP. It supports endpoints
+    for public users to retrieve recipe lists, recipe details, search recipes,
+    submit contacts and subscriptions, and fetch global site settings.
+    Administrative endpoints allow authenticated users to manage recipes and
+    perform JWT-based authentication.
+servers:
+  - url: http://localhost:1337
+paths:
+  /recipes:
+    get:
+      summary: Retrieve a list of recipes
+      operationId: op_get_recipes
+      parameters:
+        - name: category_id
+          in: query
+          description: Filter recipes by category ID
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          description: Number of recipes per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: A list of recipe summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/recipe_summary"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /recipes/{id}:
+    get:
+      summary: Retrieve full details for a specific recipe by ID
+      operationId: op_get_recipe_by_id
+      parameters:
+        - $ref: "#/components/parameters/path_id"
+      responses:
+        "200":
+          description: Recipe details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipe"
+        "404":
+          description: Recipe not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /recipes/search:
+    get:
+      summary: Search for recipes using a query string
+      operationId: op_search_recipes
+      parameters:
+        - name: query
+          in: query
+          description: Search keyword to match recipe title, description, or ingredients
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results returning an array of recipe summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/recipe_summary"
+        "400":
+          description: Bad request, missing or invalid query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /recipe_categories:
+    get:
+      summary: Retrieve the list of recipe categories
+      operationId: op_get_recipe_categories
+      responses:
+        "200":
+          description: An array of recipe categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/recipe_category"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /contacts:
+    post:
+      summary: Submit a new contact inquiry
+      operationId: op_post_contact
+      requestBody:
+        description: Contact form submission payload
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/contact_create"
+      responses:
+        "201":
+          description: Contact submission created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/contact"
+        "400":
+          description: Invalid input provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /subscriptions:
+    post:
+      summary: Subscribe with an email to receive updates
+      operationId: op_post_subscription
+      requestBody:
+        description: Subscription request payload
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/subscription_create"
+      responses:
+        "201":
+          description: Subscription created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/subscription"
+        "400":
+          description: Invalid email or already subscribed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /site_settings:
+    get:
+      summary: Retrieve global site configuration settings
+      operationId: op_get_site_settings
+      responses:
+        "200":
+          description: An array of site settings objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/site_setting"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /auth/login:
+    post:
+      summary: Authenticate admin user and return a JWT token
+      operationId: op_admin_login
+      requestBody:
+        description: Login credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/login_request"
+      responses:
+        "200":
+          description: Authentication successful. Returns a JWT token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/login_response"
+        "401":
+          description: Authentication failed. Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /recipes (admin):
+    post:
+      summary: Create a new recipe (Admin Only)
+      operationId: op_admin_create_recipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Payload to create a new recipe
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/recipe_create"
+      responses:
+        "201":
+          description: Recipe created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipe"
+        "400":
+          description: Invalid input provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "401":
+          description: Unauthorized. Invalid or missing JWT token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+  /recipes/{id} (admin):
+    put:
+      summary: Update an existing recipe (Admin Only)
+      operationId: op_admin_update_recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/path_id"
+      requestBody:
+        description: Payload with fields to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/recipe_update"
+      responses:
+        "200":
+          description: Recipe updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipe"
+        "400":
+          description: Invalid input provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "401":
+          description: Unauthorized. Invalid or missing JWT token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "404":
+          description: Recipe not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+    delete:
+      summary: Delete an existing recipe (Admin Only)
+      operationId: op_admin_delete_recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/path_id"
+      responses:
+        "200":
+          description: Recipe deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized. Invalid or missing JWT token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+        "404":
+          description: Recipe not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error_response"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    path_id:
+      name: id
+      in: path
+      description: Unique identifier of the resource
+      required: true
+      schema:
+        type: string
+  schemas:
+    recipe_summary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        short_description:
+          type: string
+        thumbnail_url:
+          type: string
+        is_featured:
+          type: boolean
+      required:
+        - id
+        - title
+        - slug
+        - short_description
+        - thumbnail_url
+    ingredient:
+      type: object
+      properties:
+        name:
+          type: string
+        measurement:
+          type: string
+      required:
+        - name
+        - measurement
+    instruction:
+      type: object
+      properties:
+        step_number:
+          type: integer
+        instruction:
+          type: string
+      required:
+        - step_number
+        - instruction
+    recipe:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        short_description:
+          type: string
+        full_description:
+          type: string
+        image_url:
+          type: string
+        thumbnail_url:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/ingredient"
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/instruction"
+        cooking_time_minutes:
+          type: number
+        prep_time_minutes:
+          type: number
+        serving_size:
+          type: string
+        difficulty:
+          type: string
+        category_id:
+          type: string
+        is_featured:
+          type: boolean
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - title
+        - slug
+        - short_description
+        - full_description
+        - image_url
+        - thumbnail_url
+        - ingredients
+        - instructions
+        - cooking_time_minutes
+        - prep_time_minutes
+        - difficulty
+        - category_id
+        - is_featured
+        - created_at
+        - updated_at
+    recipe_create:
+      type: object
+      properties:
+        title:
+          type: string
+        short_description:
+          type: string
+        full_description:
+          type: string
+        image_url:
+          type: string
+        thumbnail_url:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/ingredient"
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/instruction"
+        cooking_time_minutes:
+          type: number
+        prep_time_minutes:
+          type: number
+        serving_size:
+          type: string
+        difficulty:
+          type: string
+        category_id:
+          type: string
+        is_featured:
+          type: boolean
+      required:
+        - title
+        - short_description
+        - full_description
+        - image_url
+        - thumbnail_url
+        - ingredients
+        - instructions
+        - cooking_time_minutes
+        - prep_time_minutes
+        - difficulty
+        - category_id
+    recipe_update:
+      type: object
+      properties:
+        title:
+          type: string
+        short_description:
+          type: string
+        full_description:
+          type: string
+        image_url:
+          type: string
+        thumbnail_url:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/ingredient"
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/instruction"
+        cooking_time_minutes:
+          type: number
+        prep_time_minutes:
+          type: number
+        serving_size:
+          type: string
+        difficulty:
+          type: string
+        category_id:
+          type: string
+        is_featured:
+          type: boolean
+      description: All fields are optional. Only include the fields to update.
+    recipe_category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - name
+    contact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        message:
+          type: string
+        submitted_at:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - message
+        - submitted_at
+    contact_create:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        message:
+          type: string
+      required:
+        - name
+        - email
+        - message
+    subscription:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        subscribed_at:
+          type: string
+      required:
+        - id
+        - email
+        - subscribed_at
+    subscription_create:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+    site_setting:
+      type: object
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+      required:
+        - id
+        - key
+        - value
+    login_request:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    login_response:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    error_response:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message

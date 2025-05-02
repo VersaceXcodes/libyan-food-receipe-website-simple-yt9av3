@@ -1,0 +1,15 @@
+{
+  "timestamp": 1746181499877,
+  "operation": {
+    "id": "backend:server:main"
+  },
+  "projectId": "libyan-food-receipe-website-simple",
+  "files": [
+    {
+      "path": "../../apps/libyan-food-receipe-website-simple/backend/server.js",
+      "type": "text",
+      "size": 13969,
+      "dependencies": false
+    }
+  ]
+}

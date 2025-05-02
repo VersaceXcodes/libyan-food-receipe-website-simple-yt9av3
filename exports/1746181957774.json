@@ -1,0 +1,19 @@
+{
+  "timestamp": 1746181957774,
+  "operation": {
+    "id": "webapp:react:views",
+    "refs": {
+      "id": "UV_SearchResults",
+      "version": "1746181823584"
+    }
+  },
+  "projectId": "libyan-food-receipe-website-simple",
+  "files": [
+    {
+      "path": "../../apps/libyan-food-receipe-website-simple/vitereact/src/components/views/UV_SearchResults.tsx",
+      "type": "text",
+      "size": 4089,
+      "dependencies": false
+    }
+  ]
+}
